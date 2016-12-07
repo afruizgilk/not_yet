@@ -51,6 +51,7 @@ def start():
                         sys.exit(0)
                     if m.cursor == 0:
                         sound.stop()
+                        game()
                     if m.cursor == 1:
                         print("Menu help")
                 pantalla.fill((51,51,51))
