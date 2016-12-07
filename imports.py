@@ -81,6 +81,10 @@ class Menu:
             y+=50
         pygame.display.flip()
 
+def espejo(imagen):
+    imagen=pygame.transform.flip(imagen,180,0)
+    return imagen
+
 class Jugador(pygame.sprite.Sprite):
 
     # Atributos
@@ -90,32 +94,45 @@ class Jugador(pygame.sprite.Sprite):
 
     # Lista de elementos con los cuales chocar
     nivel = None
-
+    caminando= []
+    saltox=[]
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
         # creamos el bloque
         ancho = 40
         alto = 60
-        self.image = pygame.Surface([ancho, alto])
-        self.image.fill(ROJO)
-
+        for i in range(1,7):
+            self.caminando.append(pygame.image.load("data/images/player/Walk"+str(i)+".png"))
+        for i in range(1,8):
+            self.saltox.append(pygame.image.load("data/images/player/Jump"+str(i)+".png"))
+        self.image = pygame.transform.scale(pygame.image.load("data/images/player/Walk1.png").convert_alpha(),(50,100))
         self.rect = self.image.get_rect()
-
+        self.i=0
+        self.conta_salto=0
+        self.direccion = "derecha"
+    def escalar_sprite(self,sprite):
+        sprite=pygame.transform.scale(sprite,(50,100))
+        return sprite
 
     def update(self):
-        """ Mueve el jugador. """
-        # Gravedad
         self.calc_grav()
-
+        if(self.i>len(self.caminando)-1):
+            self.i=0
         # Mover izq/der
+        if(self.vel_x>0):
+            self.direccion="derecha"
+            self.image = self.escalar_sprite(self.caminando[self.i])
+            self.i+=1
+        elif(self.vel_x<0):
+            self.direccion="izquierda"
+            self.image = self.escalar_sprite(espejo(self.caminando[self.i]))
+            self.i+=1
         self.rect.x += self.vel_x
 
         # Revisar si golpeamos con algo (bloques con colision)
         bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
         for bloque in bloque_col_list:
-            # Si nos movemos a la derecha,
-            # ubicar jugador a la izquierda del objeto golpeado
             if self.vel_x > 0:
                 self.rect.right = bloque.rect.left
             elif self.vel_x < 0:
@@ -137,18 +154,29 @@ class Jugador(pygame.sprite.Sprite):
 
             # Detener movimiento vertical
             self.vel_y = 0
-
+    def animar_salto(self):
+        if(self.conta_salto>3):
+            self.conta_salto=3
+        if(self.direccion=="derecha"):
+            self.image=self.escalar_sprite(self.saltox[self.conta_salto])
+            self.conta_salto+=1
+        else:
+            self.image = self.escalar_sprite(espejo(self.saltox[self.conta_salto]))
+            self.conta_salto+=1
     def calc_grav(self):
-        """ Calculamos efecto de la gravedad. """
         if self.vel_y == 0:
             self.vel_y = 1
+
         else:
             self.vel_y += .35
+
 
         # Revisamos si estamos en el suelo
         if self.rect.y >= ALTO - self.rect.height and self.vel_y >= 0:
             self.vel_y = 0
             self.rect.y = ALTO - self.rect.height
+        else:
+            self.animar_salto()
 
     def salto(self):
         """ saltamos al pulsar boton de salto """
@@ -161,6 +189,7 @@ class Jugador(pygame.sprite.Sprite):
         # Si es posible saltar, aumentamos velocidad hacia arriba
         if len(plataforma_col_lista) > 0 or self.rect.bottom >= ALTO:
             self.vel_y = -10
+
 
     # Control del movimiento
     def ir_izq(self):
@@ -176,33 +205,27 @@ class Jugador(pygame.sprite.Sprite):
         self.vel_x = 0
 
 class Plataforma(pygame.sprite.Sprite):
-    """ Plataforma donde el usuario puede subir """
-
+    matriz=cargar_fondo("data/images/tiles_spritesheet.png",70,72,True)
     def __init__(self, ancho, alto):
         pygame.sprite.Sprite.__init__(self)
-
-        self.image = pygame.Surface([ancho, alto])
-        self.image.fill(VERDE)
-
+        self.image = self.matriz[0][0]
         self.rect = self.image.get_rect()
+        self.tipo = ""
+    def get_from_tipo(self):
+        if(self.tipo == "caja"):
+            self.image=self.matriz[0][6]
+        else:
+            self.image = self.matriz[0][0]
 
 class Nivel(object):
-    """ Esta es una superclase usada para definir un nivel
-        Se crean clases hijas por cada nivel que desee emplearse """
 
     # Lista de sprites usada en todos los niveles. Add or remove
     plataforma_lista = None
     enemigos_lista = None
-
-    # Imagen de Fondo
-    #fondo = None
     fondo=pygame.transform.scale(pygame.image.load("data/images/background_1.png"), (3000,600))
-    #valor desplazamiento de fondo
     mov_fondo=0
 
     def __init__(self, jugador):
-        """ Constructor. Pass in a handle to player. Needed for when moving platforms
-            collide with the player. """
         self.plataforma_lista = pygame.sprite.Group()
         self.enemigos_lista = pygame.sprite.Group()
         self.jugador = jugador
@@ -254,6 +277,8 @@ class Nivel_01(Nivel):
             bloque = Plataforma(plataforma[0], plataforma[1])
             bloque.rect.x = plataforma[2]
             bloque.rect.y = plataforma[3]
+            bloque.tipo="caja"
+            bloque.get_from_tipo()
             bloque.jugador = self.jugador
             self.plataforma_lista.add(bloque)
 
@@ -332,7 +357,6 @@ def game():
                 if event.key == pygame.K_RIGHT:
                     jugador.ir_der()
                 if event.key == pygame.K_UP:
-                    print "salto"
                     jugador.salto()
 
             if event.type == pygame.KEYUP:
