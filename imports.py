@@ -14,6 +14,8 @@ AZUL=(0,0,255)
 ROJO=(255,0,0)
 VERDE=(0, 255,0)
 
+#control de velocidad en el cambio de imagenes
+control = 10
 # Dimensiones pantalla
 ANCHO=800
 ALTO=600
@@ -117,6 +119,7 @@ class Enemigo(pygame.sprite.Sprite):
         self.rect.y=y
         self.rango = rango
         self.direccion="derecha"
+        self.control_imagenes=0
 
     def escalar_sprite(self,sprite):
         sprite=pygame.transform.scale(sprite,(50,100))
@@ -130,20 +133,41 @@ class Enemigo1(Enemigo):
             self.caminando.append(pygame.image.load("data/images/enemy/redwalk_"+str(i)+".png").convert_alpha())
         self.conta=True
         self.relative_pos = x
-        self.aux = self.relative_pos
+
     def update(self):
+        speed = 2
+        if(self.i >= len(self.caminando)-1):
+            self.i=0
+
         if(self.relative_pos > self.rango[1]):
             self.conta=False
         else:
             if(self.relative_pos < self.rango[0]):
                 self.conta=True
 
-        if(self.conta):
-            self.rect.x+=5
-            self.relative_pos+=5
+        if(self.control_imagenes == 0):
+
+            if(self.direccion=="derecha"):
+                self.image = self.escalar_sprite(self.caminando[self.i])
+                self.i+=1
+            else:
+                self.image = espejo(self.escalar_sprite(self.caminando[self.i]))
+                self.i+=1
+            self.control_imagenes+=1
         else:
-            self.rect.x-=5
-            self.relative_pos-=5
+            if(self.control_imagenes >= control):
+                self.control_imagenes = 0
+            else:
+                self.control_imagenes += 1
+
+        if(self.conta):
+            self.direccion="derecha"
+            self.rect.x+=speed
+            self.relative_pos+=speed
+        else:
+            self.direccion="izquierda"
+            self.rect.x-=speed
+            self.relative_pos-=speed
 
 
 class Jugador(pygame.sprite.Sprite):
@@ -454,8 +478,6 @@ def game():
               nivel_actual = nivel_lista[nivel_actual_no]
               jugador.nivel=nivel_actual
 
-        for en in nivel_actual.enemigos_lista:
-            print(en.rect.x," ",en.rect.y)
         # Dibujamos y refrescamos
         # Actualizamos al jugador.
         activos_sp_lista.update()
