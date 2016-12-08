@@ -108,16 +108,42 @@ class Bullet(pygame.sprite.Sprite): #Hereda de la clase sprite
 
 class Enemigo(pygame.sprite.Sprite):
     nivel = None
+    caminando=[]
     def __init__(self, x,y, rango):
         pygame.sprite.Sprite.__init__(self)
-        self.image = self.image_derecha[0]
+        self.image = pygame.transform.scale(pygame.image.load("data/images/enemy/armor__0006_walk_1.png").convert_alpha(),(50,100))
         self.rect = self.image.get_rect()
         self.rect.x=x
         self.rect.y=y
         self.rango = rango
         self.direccion="derecha"
 
+    def escalar_sprite(self,sprite):
+        sprite=pygame.transform.scale(sprite,(50,100))
+        return sprite
+
+class Enemigo1(Enemigo):
+    def __init__(self,x,y,rango):
+        Enemigo.__init__(self,x,y,rango)
+        self.i=0
+        for i in range(1,7):
+            self.caminando.append(pygame.image.load("data/images/enemy/redwalk_"+str(i)+".png").convert_alpha())
     def update(self):
+        if(self.rect.x >= self.rango[1]):
+            self.direccion = "izquierda"
+        else:
+            if(self.rect.x <= self.rango[0]):
+                self.direccion = "derecha"
+        if(self.i >= len(self.caminando)-1):
+            self.i=0
+        if(self.direccion=="derecha"):
+            self.rect.x+=5
+            self.image = self.escalar_sprite(self.caminando[self.i])
+            self.i+=1
+        else:
+            self.rect.x-=5
+            self.image = espejo(self.escalar_sprite(self.caminando[self.i]))
+            self.i+=1
 
 
 class Jugador(pygame.sprite.Sprite):
@@ -296,6 +322,7 @@ class Nivel_01(Nivel):
     def __init__(self, jugador):
         Nivel.__init__(self, jugador)
         self.limite=-3000
+        self.enemigos_lista=pygame.sprite.Group()
         nivel = [
                     [472, 410, "muro_verde"],
                     [540, 320, "muro_verde"],
@@ -307,6 +334,8 @@ class Nivel_01(Nivel):
                     [1336, 120, "caja_x"],
                     [1120, 300, "caja"],
                  ]
+        en = Enemigo1(300,300, [100,500])
+        self.enemigos_lista.add(en)
 
         for plataforma in nivel:
             bloque = Plataforma(plataforma[0], plataforma[1])
@@ -398,12 +427,6 @@ def game():
                 if event.key == pygame.K_RIGHT and jugador.vel_x > 0:
                     jugador.no_mover()
 
-        # Actualizamos al jugador.
-        activos_sp_lista.update()
-
-        # Actualizamos elementos en el nivel
-        nivel_actual.update()
-
         #  Si el jugador se aproxima al limite derecho de la pantalla (-x)
         if jugador.rect.x >= 500:
             dif = jugador.rect.x - 500
@@ -426,7 +449,10 @@ def game():
               jugador.nivel=nivel_actual
 
         # Dibujamos y refrescamos
-
+        # Actualizamos al jugador.
+        activos_sp_lista.update()
+        nivel_actual.update()
+        nivel_actual.enemigos_lista.draw(pantalla)
         nivel_actual.draw(pantalla)
         activos_sp_lista.draw(pantalla)
         reloj.tick(60)
