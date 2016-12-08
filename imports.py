@@ -85,6 +85,41 @@ def espejo(imagen):
     imagen=pygame.transform.flip(imagen,180,0)
     return imagen
 
+class Bullet(pygame.sprite.Sprite): #Hereda de la clase sprite
+
+    def __init__(self, img_name, x,y, direccion): #img para cargar, y su padre(de donde debe salir la bala)
+    	pygame.sprite.Sprite.__init__(self)
+    	self.image = pygame.image.load(img_name).convert_alpha()
+    	self.rect = self.image.get_rect()
+    	self.rect.x = x
+    	self.rect.y = y
+        self.speed = 1
+        self.direccion = direccion
+    def update(self):
+
+        if(self.direccion == "derecha"): #derecha
+            self.rect.x += self.speed
+        if(self.direccion == "izquierda"):#izquierda
+            self.rect.x -= self.speed
+        if(self.direccion == "arriba"):#arriba
+            self.rect.y -= self.speed
+        if(self.direccion == "abajo"):#abajo
+            self.rect.y += self.speed
+
+class Enemigo(pygame.sprite.Sprite):
+    nivel = None
+    def __init__(self, x,y, rango):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = self.image_derecha[0]
+        self.rect = self.image.get_rect()
+        self.rect.x=x
+        self.rect.y=y
+        self.rango = rango
+        self.direccion="derecha"
+
+    def update(self):
+
+
 class Jugador(pygame.sprite.Sprite):
 
     # Atributos
@@ -96,6 +131,7 @@ class Jugador(pygame.sprite.Sprite):
     nivel = None
     caminando= []
     saltox=[]
+    muerte=[]
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
@@ -106,37 +142,43 @@ class Jugador(pygame.sprite.Sprite):
             self.caminando.append(pygame.image.load("data/images/player/Walk"+str(i)+".png"))
         for i in range(1,8):
             self.saltox.append(pygame.image.load("data/images/player/Jump"+str(i)+".png"))
+        for i in range(1,9):
+            self.muerte.append(pygame.image.load("data/images/player/Dead"+str(i)+".png"))
         self.image = pygame.transform.scale(pygame.image.load("data/images/player/Walk1.png").convert_alpha(),(50,100))
+        self.ataque = pygame.transform.scale(pygame.image.load("data/images/player/Attack1.png").convert_alpha(),(50,100))
         self.rect = self.image.get_rect()
         self.i=0
         self.conta_salto=0
         self.direccion = "derecha"
+        self.direccion_o = "derecha"
+
     def escalar_sprite(self,sprite):
         sprite=pygame.transform.scale(sprite,(50,100))
         return sprite
 
     def update(self):
+        self.choque=False
         self.calc_grav()
         if(self.i>len(self.caminando)-1):
             self.i=0
         # Mover izq/der
         if(self.vel_x>0):
             self.direccion="derecha"
+            self.direccion_o = "derecha"
             self.image = self.escalar_sprite(self.caminando[self.i])
             self.i+=1
         elif(self.vel_x<0):
             self.direccion="izquierda"
+            self.direccion_o = "izquierda"
             self.image = self.escalar_sprite(espejo(self.caminando[self.i]))
             self.i+=1
         self.rect.x += self.vel_x
 
-        # Revisar si golpeamos con algo (bloques con colision)
         bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
         for bloque in bloque_col_list:
             if self.vel_x > 0:
                 self.rect.right = bloque.rect.left
             elif self.vel_x < 0:
-                # De otra forma nos movemos a la izquierda
                 self.rect.left = bloque.rect.right
 
         # Mover arriba/abajo
@@ -145,15 +187,13 @@ class Jugador(pygame.sprite.Sprite):
         # Revisamos si chocamos
         bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
         for bloque in bloque_col_list:
-
             # Reiniciamos posicion basado en el arriba/bajo del objeto
             if self.vel_y > 0:
                 self.rect.bottom = bloque.rect.top
             elif self.vel_y < 0:
                 self.rect.top = bloque.rect.bottom
-
-            # Detener movimiento vertical
             self.vel_y = 0
+
     def animar_salto(self):
         if(self.conta_salto>3):
             self.conta_salto=3
@@ -179,41 +219,38 @@ class Jugador(pygame.sprite.Sprite):
             self.animar_salto()
 
     def salto(self):
-        """ saltamos al pulsar boton de salto """
-        print "en salto"
-        # Nos movemos abajo un poco y revisamos si hay una plataforma bajo el jugador
+        self.direccion_o = "arriba"
         self.rect.y += 2
         plataforma_col_lista = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
         self.rect.y -= 2
-
-        # Si es posible saltar, aumentamos velocidad hacia arriba
         if len(plataforma_col_lista) > 0 or self.rect.bottom >= ALTO:
-            self.vel_y = -10
+            self.vel_y = -12
 
-
-    # Control del movimiento
     def ir_izq(self):
-        """ Usuario pulsa flecha izquierda """
         self.vel_x = -6
 
     def ir_der(self):
-        """ Usuario pulsa flecha derecha """
         self.vel_x = 6
 
     def no_mover(self):
-        """ Usuario no pulsa teclas """
         self.vel_x = 0
 
 class Plataforma(pygame.sprite.Sprite):
-    matriz=cargar_fondo("data/images/tiles_spritesheet.png",70,72,True)
-    def __init__(self, ancho, alto):
+    matriz=cargar_fondo("data/images/tiles_spritesheet.png",72,72,True)
+    def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = self.matriz[0][0]
         self.rect = self.image.get_rect()
+        self.rect.x=x
+        self.rect.y=y
         self.tipo = ""
     def get_from_tipo(self):
         if(self.tipo == "caja"):
             self.image=self.matriz[0][6]
+        elif(self.tipo == "caja_x"):
+            self.image=self.matriz[0][11]
+        elif(self.tipo == "muro_verde"):
+            self.image=self.matriz[1][5]
         else:
             self.image = self.matriz[0][0]
 
@@ -243,8 +280,6 @@ class Nivel(object):
         pantalla.fill(AZUL)
 
         pantalla.blit(self.fondo, (0,0))
-
-        # Dibujamos todos los sprites en las listas
         self.plataforma_lista.draw(pantalla)
         self.enemigos_lista.draw(pantalla)
 
@@ -255,29 +290,27 @@ class Nivel(object):
         for enemigo in self.enemigos_lista:
             enemigo.rect.x += mov_x
 
-# Creamos variasplataformas para un nivel
+
 class Nivel_01(Nivel):
-    """ Definition for level 1. """
 
     def __init__(self, jugador):
-        """ Creamos nivel 1. """
-
-        # Llamamos al padre
         Nivel.__init__(self, jugador)
         self.limite=-3000
-        # Arreglo con ancho, alto, x, y de la plataforma
-        nivel = [ [210, 70, 500, 500],
-                  [210, 70, 800, 400],
-                  [210, 70, 1000, 500],
-                  [210, 70, 1120, 300],
+        nivel = [
+                    [472, 410, "muro_verde"],
+                    [540, 320, "muro_verde"],
+                    [630, 220, "muro_verde"],
+                    [1060, 120, "caja_x"],
+                    [1129, 120, "caja_x"],
+                    [1198, 120, "caja_x"],
+                    [1267, 120, "caja_x"],
+                    [1336, 120, "caja_x"],
+                    [1120, 300, "caja"],
                  ]
 
-        # Go through the array above and add platforms
         for plataforma in nivel:
             bloque = Plataforma(plataforma[0], plataforma[1])
-            bloque.rect.x = plataforma[2]
-            bloque.rect.y = plataforma[3]
-            bloque.tipo="caja"
+            bloque.tipo=plataforma[2]
             bloque.get_from_tipo()
             bloque.jugador = self.jugador
             self.plataforma_lista.add(bloque)
