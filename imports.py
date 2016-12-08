@@ -128,7 +128,18 @@ class Enemigo1(Enemigo):
         self.i=0
         for i in range(1,7):
             self.caminando.append(pygame.image.load("data/images/enemy/redwalk_"+str(i)+".png").convert_alpha())
+        self.conta=0
     def update(self):
+        if(self.conta <= 30):
+            self.rect.x+=5
+            self.conta+=1
+        elif(self.conta > 30 and self.conta <= 60):
+            self.rect.x-=5
+            self.conta+=1
+        else:
+            self.conta=0
+
+    """def update(self):
         if(self.rect.x >= self.rango[1]):
             self.direccion = "izquierda"
         else:
@@ -144,7 +155,7 @@ class Enemigo1(Enemigo):
             self.rect.x-=5
             self.image = espejo(self.escalar_sprite(self.caminando[self.i]))
             self.i+=1
-
+"""
 
 class Jugador(pygame.sprite.Sprite):
 
@@ -334,8 +345,14 @@ class Nivel_01(Nivel):
                     [1336, 120, "caja_x"],
                     [1120, 300, "caja"],
                  ]
-        en = Enemigo1(300,300, [100,500])
-        self.enemigos_lista.add(en)
+        enemigos_config = [
+                    [1060,20,200,600, "Enemigo1"]
+                ]
+
+        for enemigo in enemigos_config:
+            if(enemigo[4] == "Enemigo1"):
+                en=Enemigo1(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
+                self.enemigos_lista.add(en)
 
         for plataforma in nivel:
             bloque = Plataforma(plataforma[0], plataforma[1])
@@ -448,10 +465,13 @@ def game():
               nivel_actual = nivel_lista[nivel_actual_no]
               jugador.nivel=nivel_actual
 
+        for en in nivel_actual.enemigos_lista:
+            print(en.rect.x," ",en.rect.y)
         # Dibujamos y refrescamos
         # Actualizamos al jugador.
         activos_sp_lista.update()
         nivel_actual.update()
+        #nivel_actual.enemigos_lista.update()
         nivel_actual.enemigos_lista.draw(pantalla)
         nivel_actual.draw(pantalla)
         activos_sp_lista.draw(pantalla)
