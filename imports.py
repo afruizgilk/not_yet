@@ -128,34 +128,23 @@ class Enemigo1(Enemigo):
         self.i=0
         for i in range(1,7):
             self.caminando.append(pygame.image.load("data/images/enemy/redwalk_"+str(i)+".png").convert_alpha())
-        self.conta=0
+        self.conta=True
+        self.relative_pos = x
+        self.aux = self.relative_pos
     def update(self):
-        if(self.conta <= 30):
-            self.rect.x+=5
-            self.conta+=1
-        elif(self.conta > 30 and self.conta <= 60):
-            self.rect.x-=5
-            self.conta+=1
+        if(self.relative_pos > self.rango[1]):
+            self.conta=False
         else:
-            self.conta=0
+            if(self.relative_pos < self.rango[0]):
+                self.conta=True
 
-    """def update(self):
-        if(self.rect.x >= self.rango[1]):
-            self.direccion = "izquierda"
-        else:
-            if(self.rect.x <= self.rango[0]):
-                self.direccion = "derecha"
-        if(self.i >= len(self.caminando)-1):
-            self.i=0
-        if(self.direccion=="derecha"):
+        if(self.conta):
             self.rect.x+=5
-            self.image = self.escalar_sprite(self.caminando[self.i])
-            self.i+=1
+            self.relative_pos+=5
         else:
             self.rect.x-=5
-            self.image = espejo(self.escalar_sprite(self.caminando[self.i]))
-            self.i+=1
-"""
+            self.relative_pos-=5
+
 
 class Jugador(pygame.sprite.Sprite):
 
@@ -346,7 +335,7 @@ class Nivel_01(Nivel):
                     [1120, 300, "caja"],
                  ]
         enemigos_config = [
-                    [1060,20,200,600, "Enemigo1"]
+                    [1060,20,1080,1336, "Enemigo1"]
                 ]
 
         for enemigo in enemigos_config:
