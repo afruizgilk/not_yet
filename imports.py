@@ -851,7 +851,7 @@ def final():
     ANCHO = 800
     pygame.init()
     pantalla = pygame.display.set_mode((ANCHO, ALTO+30))
-    pygame.display.set_caption(" Zombie maze - [History-End] ", 'Spine Runtime')
+    pygame.display.set_caption(" Not Yet - [History-End] ", 'Spine Runtime')
     pantalla.fill((0,0,0))
     font_path = 'data/fonts/Bombing.ttf'
     font = pygame.font.Font
@@ -888,7 +888,48 @@ def final():
                     salir=True
                     sys.exit(0)
 
+def prologo():
+    ALTO = 600
+    ANCHO = 800
+    pygame.init()
+    pantalla = pygame.display.set_mode((ANCHO, ALTO+30))
+    pygame.display.set_caption(" Not Yet - [History-Init] ", 'Spine Runtime')
+    pantalla.fill((0,0,0))
+    font_path = 'data/fonts/Bombing.ttf'
+    font = pygame.font.Font
+    tipo = pygame.font.Font(font_path, 40)
+    text = tipo.render("Un zombie quiere vengar asesinando " , 1 , (255,0,0))
+    text1 = tipo.render("al lider alien quien lo volvio", 1 , (255,0,0))
+    text2 = tipo.render("de noble guerrero a zombie.finalmente", 1 , (255,0,0))
+    text3 = tipo.render("el alien se convirtio en su peor enemigo", 1 , (255,0,0))
+    text4 = tipo.render("el zombie no descansara hasta ", 1 , (255,0,0))
+    text5 = tipo.render("lograr asesinarlo.", 1 , (255,0,0))
+    img = pygame.image.load("data/images/init.jpeg")
+    img = pygame.transform.scale(img, (ANCHO, ALTO+30))
+    text5 = tipo.render("Presiona ENTER para continuar !", 1 , (255,255,255))
+    pantalla.blit(img, (0,0))
+    pantalla.blit(text, (10,10))
+    pantalla.blit(text1, (10,50))
+    pantalla.blit(text2, (10,90))
+    pantalla.blit(text3, (10,130))
+    pantalla.blit(text4, (10,170))
+    pantalla.blit(text4, (10,220))
+    pantalla.blit(text5, (70,ALTO-10))
+    pygame.display.flip()
+    terminar = False
+    while not terminar:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminar=True
+                salir=True
+            elif event.type==pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminar=True
+                if event.key == pygame.K_RETURN:
+                    terminar=True
+
 def game():
+    prologo()
     pygame.init()
 
     # Set the height and width of the screen
