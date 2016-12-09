@@ -101,6 +101,7 @@ class Bullet(pygame.sprite.Sprite): #Hereda de la clase sprite
         self.speed = 1
         self.relative_pos = [x,y]
         self.eliminar=False
+        self.bloqueado=False
         self.direccion = direccion
 
     def update_rect(self,x,y):
@@ -394,9 +395,54 @@ class Enemigo4(Enemigo):
             self.rect.x-=speed
             self.relative_pos-=speed
 
-"""class Boss(Enemigo):
+class Boss(Enemigo):
     camino=[]
-    ataque=[]"""
+    ataque=[]
+    def __init__(self,x,y,rango):
+        Enemigo.__init__(self,x,y,rango)
+        self.i=0
+        self.vida = 400
+        for i in range(1,7):
+            self.camino.append(pygame.image.load("data/images/enemy/predatormaskwalk_"+str(i)+".png").convert_alpha())
+        self.ataque.append(pygame.image.load("data/images/enemy/predatormaskattack_1.png"))
+        self.conta=True
+        self.relative_pos = x
+
+    def update(self):
+        speed = 4
+        if(self.i >= len(self.camino)-1):
+            self.i=0
+
+        if(self.relative_pos > self.rango[1]):
+            self.conta=False
+        else:
+            if(self.relative_pos < self.rango[0]):
+                self.conta=True
+
+        if(self.control_imagenes == 0):
+
+            if(self.direccion=="derecha"):
+                self.image = self.escalar_sprite(self.camino[self.i])
+                self.i+=1
+            else:
+                self.image = espejo(self.escalar_sprite(self.camino[self.i]))
+                self.i+=1
+            self.control_imagenes+=1
+        else:
+            if(self.control_imagenes >= control):
+                self.control_imagenes = 0
+            else:
+                self.control_imagenes += 1
+
+        if(self.conta):
+            self.direccion="derecha"
+            self.rect.x+=speed
+            self.relative_pos+=speed
+        else:
+            self.direccion="izquierda"
+            self.rect.x-=speed
+            self.relative_pos-=speed
+
 
 class Jugador(pygame.sprite.Sprite):
     # Atributos
@@ -701,6 +747,13 @@ class Nivel_02(Nivel):
         elemento = [
                     [360,-415, "hongo"]
                     ]
+
+        boss=[[900,-70, 900, 1200, "Boss"]]
+
+        for enemigo in boss:
+            en=Boss(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
+            self.enemigos_lista.add(en)
+
         for element in elemento:
             bloque = Plataforma(element[0], element[1])
             bloque.tipo=element[2]
@@ -776,6 +829,48 @@ def pantalla_game_over():
                 if event.key == pygame.K_RETURN:
                     terminar=True
 
+def final():
+    ALTO = 600
+    ANCHO = 800
+    pygame.init()
+    pantalla = pygame.display.set_mode((ANCHO, ALTO+30))
+    pygame.display.set_caption(" Zombie maze - [History-End] ", 'Spine Runtime')
+    pantalla.fill((0,0,0))
+    font_path = 'data/fonts/Bombing.ttf'
+    font = pygame.font.Font
+    tipo = pygame.font.Font(font_path, 40)
+    text = tipo.render("Tras derrotar al malvado lider " , 1 , (255,0,0))
+    text1 = tipo.render("alien se logro restablecer el", 1 , (255,0,0))
+    text2 = tipo.render("balance natural finalmente", 1 , (255,0,0))
+    text3 = tipo.render("el alien no tenia cura. El viejo zombie ", 1 , (255,0,0))
+    text4 = tipo.render("decidio seguir batallando por ", 1 , (255,0,0))
+    text5 = tipo.render("la justicia para siempre.", 1 , (255,0,0))
+    img = pygame.image.load("data/images/end.jpg")
+    img = pygame.transform.scale(img, (ANCHO, ALTO+30))
+    text5 = tipo.render("Presiona ENTER para continuar !", 1 , (255,255,255))
+    pantalla.blit(img, (0,0))
+    pantalla.blit(text, (10,10))
+    pantalla.blit(text1, (10,50))
+    pantalla.blit(text2, (10,90))
+    pantalla.blit(text3, (10,130))
+    pantalla.blit(text4, (10,170))
+    pantalla.blit(text4, (10,220))
+    pantalla.blit(text5, (70,ALTO-10))
+    pygame.display.flip()
+    terminar = False
+    while not terminar:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminar=True
+                salir=True
+            elif event.type==pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminar=True
+                if event.key == pygame.K_RETURN:
+                    terminar=True
+                    salir=True
+                    sys.exit(0)
+
 def game():
     """ Programa principal """
     pygame.init()
@@ -820,6 +915,9 @@ def game():
     flag_segundo=True
     # -------- Ciclo del juego -----------
     while not fin:
+        if(len(nivel_lista[1].enemigos_lista) == 0):
+            fin=True
+            final()
         if(jugador.vida <= 0):
             fin=True
             pantalla_game_over()
@@ -846,12 +944,13 @@ def game():
                     else:
                         pausa=True
                 if event.key == pygame.K_SPACE:
-                    bl = Bullet("data/images/bone.png",jugador.rect.x,jugador.rect.y+20,jugador.direccion_o)
-                    bl.nivel = nivel_actual
-                    bl.image = pygame.transform.scale(pygame.image.load("data/images/bone.png").convert_alpha(),(35,35))
-                    bl.update_rect(jugador.rect.x,jugador.rect.y+20)
-                    nivel_actual.elementos_lista.add(bl)
-                    jugador.bones-=1
+                    if(jugador.bones > 0):
+                        bl = Bullet("data/images/bone.png",jugador.rect.x,jugador.rect.y+20,jugador.direccion_o)
+                        bl.nivel = nivel_actual
+                        bl.image = pygame.transform.scale(pygame.image.load("data/images/bone.png").convert_alpha(),(35,35))
+                        bl.update_rect(jugador.rect.x,jugador.rect.y+20)
+                        nivel_actual.elementos_lista.add(bl)
+                        jugador.bones-=1
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT and jugador.vel_x < 0:
@@ -874,8 +973,16 @@ def game():
 
         if(nivel_actual_no==1 and not jugador.hongo):
             if(flag_segundo):
+                font_path = 'data/fonts/coders_crux.ttf'
+                font = pygame.font.Font
+                tipo = pygame.font.Font(font_path, 80)
+                text = tipo.render(" Nivel 2 " , 1 , (255,0,0))
                 jugador.rect.x,jugador.rect.y = 500, 400
                 flag_segundo=False
+                nivel_actual.draw(pantalla)
+                pantalla.blit(text, (ANCHO/2-100,ALTO/2))
+                pygame.display.flip()
+                time.sleep(2)
 
             if jugador.rect.y <= 100:
                 dif = jugador.rect.y - 100
