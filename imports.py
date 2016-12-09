@@ -359,6 +359,10 @@ class Jugador(pygame.sprite.Sprite):
         return sprite
 
     def update(self):
+        for enemigo in self.nivel.enemigos_lista:
+            if(checkCollision(self,enemigo)):
+                self.vida-=random.randrange(2,5)
+
         if(self.bones <= 0):
             for i in range(1,5):
                 self.image = self.escalar_sprite(self.hurt[i])
@@ -366,6 +370,8 @@ class Jugador(pygame.sprite.Sprite):
                 self.bones=7
                 self.conta_hurt=0
             else:
+                if(jugador.rect.y <= ALTO-100):
+                    self.rect.y+=5
                 self.conta_hurt+=1
         else:
             self.choque=False
@@ -545,7 +551,8 @@ class Nivel_01(Nivel):
                     [1125,200,1120,1120, "Enemigo2"],
                     [2000,100,2000,2000, "Enemigo2"],
                     [2300,300,2300,2300, "Enemigo2"],
-                    [2150,200,2150,2150, "Enemigo2"]
+                    [2150,200,2150,2150, "Enemigo2"],
+                    [2000,ALTO-100, 2000, 2300, "Enemigo1"]
                 ]
 
         for enemigo in enemigos_config:
@@ -670,6 +677,8 @@ def game():
                 fin = True
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    fin=True
                 if event.key == pygame.K_LEFT:
                     jugador.ir_izq()
                 if event.key == pygame.K_RIGHT:
