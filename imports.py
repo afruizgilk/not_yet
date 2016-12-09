@@ -634,7 +634,7 @@ def game():
 
     # Controlamos que tan rapido actualizamos pantalla
     reloj = pygame.time.Clock()
-
+    pausa=False
     # -------- Ciclo del juego -----------
     while not fin:
         if(jugador.vida <= 0):
@@ -653,6 +653,11 @@ def game():
                     jugador.ir_der()
                 if event.key == pygame.K_UP:
                     jugador.salto()
+                if event.key == pygame.K_p:
+                    if(pausa):
+                        pausa=False
+                    else:
+                        pausa=True
                 if event.key == pygame.K_SPACE:
                     bl = Bullet("data/images/bone.png",jugador.rect.x,jugador.rect.y+20,jugador.direccion_o)
                     bl.nivel = nivel_actual
@@ -687,14 +692,21 @@ def game():
               nivel_actual = nivel_lista[nivel_actual_no]
               jugador.nivel=nivel_actual
 
-        # Dibujamos y refrescamos
-        # Actualizamos al jugador.
-        activos_sp_lista.update()
-        nivel_actual.update()
-        #nivel_actual.enemigos_lista.update()
-        nivel_actual.enemigos_lista.draw(pantalla)
-        nivel_actual.draw(pantalla)
-        activos_sp_lista.draw(pantalla)
-        update_status_section(sub)
+        if(not pausa):
+            # Dibujamos y refrescamos
+            # Actualizamos al jugador.
+            activos_sp_lista.update()
+            nivel_actual.update()
+            #nivel_actual.enemigos_lista.update()
+            nivel_actual.enemigos_lista.draw(pantalla)
+            nivel_actual.draw(pantalla)
+            activos_sp_lista.draw(pantalla)
+            update_status_section(sub)
+        else:
+            font_path = 'data/fonts/coders_crux.ttf'
+            font = pygame.font.Font
+            tipo = pygame.font.Font(font_path, 80)
+            text = tipo.render(" Pausa " , 1 , (255,0,0))
+            pantalla.blit(text, (ANCHO/2-100,ALTO/2))
         reloj.tick(60)
         pygame.display.flip()
