@@ -328,6 +328,7 @@ class Jugador(pygame.sprite.Sprite):
     caminando= []
     saltox=[]
     muerte=[]
+    hurt=[]
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
@@ -340,6 +341,8 @@ class Jugador(pygame.sprite.Sprite):
             self.saltox.append(pygame.image.load("data/images/player/Jump"+str(i)+".png"))
         for i in range(1,9):
             self.muerte.append(pygame.image.load("data/images/player/Dead"+str(i)+".png"))
+        for i in range(1,6):
+            self.hurt.append(pygame.image.load("data/images/player/Hurt"+str(i)+".png"))
         self.image = pygame.transform.scale(pygame.image.load("data/images/player/Walk1.png").convert_alpha(),(50,100))
         self.ataque = pygame.transform.scale(pygame.image.load("data/images/player/Attack1.png").convert_alpha(),(50,100))
         self.rect = self.image.get_rect()
@@ -348,51 +351,62 @@ class Jugador(pygame.sprite.Sprite):
         self.direccion = "derecha"
         self.direccion_o = "derecha"
         self.vida = 100
-
+        self.bones = 7
+        self.conta_hurt=0
+        self.pos_hurt = 0
     def escalar_sprite(self,sprite):
         sprite=pygame.transform.scale(sprite,(50,100))
         return sprite
 
     def update(self):
-        self.choque=False
-        self.calc_grav()
-        if(self.i>len(self.caminando)-1):
-            self.i=0
-        # Mover izq/der
-        if(self.vel_x>0):
-            self.direccion="derecha"
-            self.direccion_o = "derecha"
-            self.image = self.escalar_sprite(self.caminando[self.i])
-            self.i+=1
-        elif(self.vel_x<0):
-            self.direccion="izquierda"
-            self.direccion_o = "izquierda"
-            self.image = self.escalar_sprite(espejo(self.caminando[self.i]))
-            self.i+=1
-        self.rect.x += self.vel_x
+        if(self.bones <= 0):
+            for i in range(1,5):
+                self.image = self.escalar_sprite(self.hurt[i])
+            if(self.conta_hurt > 500):
+                self.bones=7
+                self.conta_hurt=0
+            else:
+                self.conta_hurt+=1
+        else:
+            self.choque=False
+            self.calc_grav()
+            if(self.i>len(self.caminando)-1):
+                self.i=0
+            # Mover izq/der
+            if(self.vel_x>0):
+                self.direccion="derecha"
+                self.direccion_o = "derecha"
+                self.image = self.escalar_sprite(self.caminando[self.i])
+                self.i+=1
+            elif(self.vel_x<0):
+                self.direccion="izquierda"
+                self.direccion_o = "izquierda"
+                self.image = self.escalar_sprite(espejo(self.caminando[self.i]))
+                self.i+=1
+            self.rect.x += self.vel_x
 
-        bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
-        for bloque in bloque_col_list:
-            if self.vel_x > 0:
-                self.rect.right = bloque.rect.left
-            elif self.vel_x < 0:
-                self.rect.left = bloque.rect.right
+            bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
+            for bloque in bloque_col_list:
+                if self.vel_x > 0:
+                    self.rect.right = bloque.rect.left
+                elif self.vel_x < 0:
+                    self.rect.left = bloque.rect.right
 
-        bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, True)
-        for bloque in bloque_col_list:
-            self.vida-=10
-        # Mover arriba/abajo
-        self.rect.y += self.vel_y
+            bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, True)
+            for bloque in bloque_col_list:
+                self.vida-=10
+            # Mover arriba/abajo
+            self.rect.y += self.vel_y
 
-        # Revisamos si chocamos
-        bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
-        for bloque in bloque_col_list:
-            # Reiniciamos posicion basado en el arriba/bajo del objeto
-            if self.vel_y > 0:
-                self.rect.bottom = bloque.rect.top
-            elif self.vel_y < 0:
-                self.rect.top = bloque.rect.bottom
-            self.vel_y = 0
+            # Revisamos si chocamos
+            bloque_col_list = pygame.sprite.spritecollide(self, self.nivel.plataforma_lista, False)
+            for bloque in bloque_col_list:
+                # Reiniciamos posicion basado en el arriba/bajo del objeto
+                if self.vel_y > 0:
+                    self.rect.bottom = bloque.rect.top
+                elif self.vel_y < 0:
+                    self.rect.top = bloque.rect.bottom
+                self.vel_y = 0
 
     def animar_salto(self):
         if(self.conta_salto>3):
@@ -594,6 +608,15 @@ def update_status_section(sub):
     sub.blit(blood, [10,5])
     lifebars(sub, [140,8])
 
+    items = tipo.render("Guns: " , 1 , (255,0,0))
+    sub.blit(items, [300,5])
+    pos1,pos2 = 370, 2
+    bone = pygame.transform.scale(pygame.image.load("data/images/bone.png"),(25,25))
+    #sub.blit(key, (pos1,pos2))
+    for i in range(1, jugador.bones+1):
+        sub.blit(bone, (pos1,pos2))
+        pos1+=25
+
 def game():
     """ Programa principal """
     pygame.init()
@@ -664,6 +687,7 @@ def game():
                     bl.image = pygame.transform.scale(pygame.image.load("data/images/bone.png").convert_alpha(),(35,35))
                     bl.update_rect(jugador.rect.x,jugador.rect.y+20)
                     nivel_actual.elementos_lista.add(bl)
+                    jugador.bones-=1
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT and jugador.vel_x < 0:
