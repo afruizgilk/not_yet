@@ -275,6 +275,10 @@ class Bullet_en(pygame.sprite.Sprite):
                 self.nivel.elementos_lista.remove(self)
                 self.nivel.elementos_lista.remove(elemento)
 
+        for plat in self.nivel.plataforma_lista:
+            if(checkCollision(self,plat)):
+                self.nivel.elementos_lista.remove(self)
+
         if(self.cont == 0):
             if(self.i < len(self.moves)):
                 self.rect.x,self.rect.y = self.moves[self.i][0],self.moves[self.i][1]
@@ -633,6 +637,11 @@ def game():
 
     # -------- Ciclo del juego -----------
     while not fin:
+        if(jugador.vida <= 0):
+            print "game_over"
+        for enemigo in nivel_actual.enemigos_lista:
+            if(enemigo.vida <= 0):
+                nivel_actual.enemigos_lista.remove(enemigo)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 fin = True
