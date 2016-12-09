@@ -141,7 +141,7 @@ class Enemigo(pygame.sprite.Sprite):
     caminando=[]
     def __init__(self, x,y, rango):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.scale(pygame.image.load("data/images/enemy/armor__0006_walk_1.png").convert_alpha(),(50,100))
+        self.image = pygame.transform.scale(pygame.image.load("data/images/enemy/armorwalk_1.png").convert_alpha(),(50,100))
         self.rect = self.image.get_rect()
         self.rect.x=x
         self.rect.y=y
@@ -163,9 +163,8 @@ class Enemigo1(Enemigo):
             self.caminando.append(pygame.image.load("data/images/enemy/redwalk_"+str(i)+".png").convert_alpha())
         self.conta=True
         self.relative_pos = x
-
+        self.speed =2
     def update(self):
-        speed = 2
         if(self.i >= len(self.caminando)-1):
             self.i=0
 
@@ -192,12 +191,12 @@ class Enemigo1(Enemigo):
 
         if(self.conta):
             self.direccion="derecha"
-            self.rect.x+=speed
-            self.relative_pos+=speed
+            self.rect.x+=self.speed
+            self.relative_pos+=self.speed
         else:
             self.direccion="izquierda"
-            self.rect.x-=speed
-            self.relative_pos-=speed
+            self.rect.x-=self.speed
+            self.relative_pos-=self.speed
 
 class Bullet_en(pygame.sprite.Sprite):
     nivel=None
@@ -213,6 +212,7 @@ class Bullet_en(pygame.sprite.Sprite):
         self.cont = 0
         self.tipo = "bala_en"
         self.moves = []
+        self.bloqueado=False
 
     def go(self,pos):
         p = [[self.rect.x,self.rect.y],pos]
@@ -316,6 +316,83 @@ class Enemigo2(Enemigo):
         else:
             self.image = espejo(pygame.transform.scale(pygame.image.load("data/images/enemy/grayfire_6.png").convert_alpha(),(50,100)))
 
+class Enemigo3(Enemigo):
+    nivel = None
+    def __init__(self,x,y,rango):
+        Enemigo.__init__(self,x,y,rango)
+        self.i=0
+        self.vida=120
+        self.image = pygame.transform.scale(pygame.image.load("data/images/enemy/bluefire_6.png").convert_alpha(),(50,100))
+        self.conta=True
+        self.relative_pos = x
+
+
+    def update(self):
+        if(self.control_imagenes == 0):
+            bl = Bullet_en(self.rect.x,self.rect.y, [jugador.rect.x,jugador.rect.y])
+            bl.nivel = self.nivel
+            bl.image = pygame.transform.scale(pygame.image.load("data/images/bone.png").convert_alpha(),(50,50))
+            bl.go((jugador.rect.x,jugador.rect.y))
+            self.nivel.elementos_lista.add(bl)
+            self.control_imagenes+=1
+        else:
+            if(self.control_imagenes >= 200):
+                self.control_imagenes = 0
+            else:
+                self.control_imagenes += 1
+
+        if(not jugador.rect.x < self.rect.x):
+            self.image = pygame.transform.scale(pygame.image.load("data/images/enemy/bluefire_6.png").convert_alpha(),(50,100))
+        else:
+            self.image = espejo(pygame.transform.scale(pygame.image.load("data/images/enemy/bluefire_6.png").convert_alpha(),(50,100)))
+
+
+
+class Enemigo4(Enemigo):
+    img= []
+    def __init__(self,x,y,rango):
+        Enemigo.__init__(self,x,y,rango)
+        self.i=0
+        self.vida = 300
+        for i in range(1,7):
+            self.img.append(pygame.image.load("data/images/enemy/armorwalk_"+str(i)+".png").convert_alpha())
+        self.conta=True
+        self.relative_pos = x
+
+    def update(self):
+        speed = 4
+        if(self.i >= len(self.img)-1):
+            self.i=0
+
+        if(self.relative_pos > self.rango[1]):
+            self.conta=False
+        else:
+            if(self.relative_pos < self.rango[0]):
+                self.conta=True
+
+        if(self.control_imagenes == 0):
+
+            if(self.direccion=="derecha"):
+                self.image = self.escalar_sprite(self.img[self.i])
+                self.i+=1
+            else:
+                self.image = espejo(self.escalar_sprite(self.img[self.i]))
+                self.i+=1
+            self.control_imagenes+=1
+        else:
+            if(self.control_imagenes >= control):
+                self.control_imagenes = 0
+            else:
+                self.control_imagenes += 1
+
+        if(self.conta):
+            self.direccion="derecha"
+            self.rect.x+=speed
+            self.relative_pos+=speed
+        else:
+            self.direccion="izquierda"
+            self.rect.x-=speed
+            self.relative_pos-=speed
 
 
 class Jugador(pygame.sprite.Sprite):
@@ -354,11 +431,17 @@ class Jugador(pygame.sprite.Sprite):
         self.bones = 7
         self.conta_hurt=0
         self.pos_hurt = 0
+        self.hongo = False
     def escalar_sprite(self,sprite):
         sprite=pygame.transform.scale(sprite,(50,100))
         return sprite
 
     def update(self):
+        for element in self.nivel.elementos_lista:
+            if(checkCollision(self,element) and element.tipo == "hongo"):
+                self.hongo=True
+                self.nivel.elementos_lista.remove(element)
+
         for enemigo in self.nivel.enemigos_lista:
             if(checkCollision(self,enemigo)):
                 self.vida-=random.randrange(2,5)
@@ -370,8 +453,14 @@ class Jugador(pygame.sprite.Sprite):
                 self.bones=7
                 self.conta_hurt=0
             else:
-                if(jugador.rect.y <= ALTO-100):
-                    self.rect.y+=5
+                banderita=True
+                for plat in self.nivel.plataforma_lista:
+                    if(checkCollision(self,plat)):
+                        banderita=False
+                        jugador.rect.y-=2
+                if(banderita):
+                    if(jugador.rect.y <= ALTO-100):
+                        self.rect.y+=5
                 self.conta_hurt+=1
         else:
             self.choque=False
@@ -465,6 +554,7 @@ class Plataforma(pygame.sprite.Sprite):
         self.rect.y=y
         self.saved = (x,y)
         self.tipo = ""
+        self.bloqueado=False
 
     def update_rect(self):
         self.rect = self.image.get_rect()
@@ -478,6 +568,8 @@ class Plataforma(pygame.sprite.Sprite):
             self.image=self.matriz[0][11]
         elif(self.tipo == "muro_verde"):
             self.image=self.matriz[1][5]
+        elif(self.tipo == "caja_adv"):
+            self.image=self.matriz[0][2]
         else:
             self.image = self.matriz[0][0]
 
@@ -512,14 +604,21 @@ class Nivel(object):
         self.enemigos_lista.draw(pantalla)
         self.elementos_lista.draw(pantalla)
 
-    def Mover_fondo(self, mov_x):
+    def Mover_fondo(self, mov_x, mov_y):
         self.mov_fondo += mov_x
         for plataforma in self.plataforma_lista:
             plataforma.rect.x += mov_x
         for enemigo in self.enemigos_lista:
             enemigo.rect.x += mov_x
-        """for elemento in self.elementos_lista:
-            elemento.rect.x += mov_x"""
+
+        self.mov_fondo += mov_y
+        for plataforma in self.plataforma_lista:
+            plataforma.rect.y += mov_y
+        for enemigo in self.enemigos_lista:
+            enemigo.rect.y += mov_y
+        for elemento in self.elementos_lista:
+            if(not elemento.bloqueado):
+                elemento.rect.y += mov_y
 
 
 class Nivel_01(Nivel):
@@ -550,9 +649,9 @@ class Nivel_01(Nivel):
                     [1060,20,1080,1336, "Enemigo1"],
                     [1125,200,1120,1120, "Enemigo2"],
                     [2000,100,2000,2000, "Enemigo2"],
-                    [2300,300,2300,2300, "Enemigo2"],
-                    [2150,200,2150,2150, "Enemigo2"],
-                    [2000,ALTO-100, 2000, 2300, "Enemigo1"]
+                    [2300,300,2300,2300, "Enemigo3"],
+                    [2150,200,2150,2150, "Enemigo3"],
+                    [2000,ALTO-100, 2000, 2300, "Enemigo4"]
                 ]
 
         for enemigo in enemigos_config:
@@ -562,6 +661,13 @@ class Nivel_01(Nivel):
             elif(enemigo[4] == "Enemigo2"):
                 en=Enemigo2(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
                 en.nivel = self
+                self.enemigos_lista.add(en)
+            elif(enemigo[4] == "Enemigo3"):
+                en=Enemigo3(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
+                en.nivel = self
+                self.enemigos_lista.add(en)
+            if(enemigo[4] == "Enemigo4"):
+                en=Enemigo4(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
                 self.enemigos_lista.add(en)
 
         for plataforma in nivel:
@@ -573,27 +679,38 @@ class Nivel_01(Nivel):
             self.plataforma_lista.add(bloque)
 
 class Nivel_02(Nivel):
-    """ Definicion para el nivel 2. """
 
     def __init__(self, jugador):
-        """ Creamos nivel 2. """
 
         # Llamamos al padre
         Nivel.__init__(self, jugador)
         self.limite=-3000
         # Arreglo con ancho, alto, x, y de la plataforma
-        nivel = [ [210, 50, 500, 500],
-                 [210, 50, 200, 400],
-                 [210, 50, 1000, 520],
-                 [210, 50, 1200, 300],
+        nivel = [ [500, 500, "caja_adv"],
+                 [200, 400, "caja_adv"],
+                 [500, 250, "caja_adv"],
+                 [200, 100, "caja_adv"],
+                 [500, -50, "caja_adv"],
+                 [250, -200, "caja_adv"],
+                 [350, -380, "caja_adv"],
                  ]
 
+        elemento = [
+                    [360,-415, "hongo"]
+                    ]
+        for element in elemento:
+            bloque = Plataforma(element[0], element[1])
+            bloque.tipo=element[2]
+            bloque.image = pygame.transform.scale(pygame.image.load("data/images/hongo.png").convert_alpha(),(35,35))
+            bloque.update_rect()
+            self.elementos_lista.add(bloque)
         # Go through the array above and add platforms
         for plataforma in nivel:
             bloque = Plataforma(plataforma[0], plataforma[1])
-            bloque.rect.x = plataforma[2]
-            bloque.rect.y = plataforma[3]
+            bloque.tipo=plataforma[2]
+            bloque.get_from_tipo()
             bloque.jugador = self.jugador
+            bloque.update_rect()
             self.plataforma_lista.add(bloque)
 
 def lifebars(surface, pos):
@@ -623,6 +740,38 @@ def update_status_section(sub):
     for i in range(1, jugador.bones+1):
         sub.blit(bone, (pos1,pos2))
         pos1+=25
+
+def pantalla_game_over():
+    ALTO = 600
+    ANCHO = 800
+    pygame.init()
+    pantalla = pygame.display.set_mode((ANCHO, ALTO+30))
+    pygame.display.set_caption(" Not Yet - Game over ", 'Spine Runtime')
+    pantalla.fill((0,0,0))
+    font_path = 'data/fonts/Bombing.ttf'
+    font = pygame.font.Font
+    tipo = pygame.font.Font(font_path, 40)
+
+
+    img = pygame.image.load("data/images/game_over.png")
+    img = pygame.transform.scale(img, (ANCHO, ALTO+30))
+    text5 = tipo.render("Presiona ENTER para continuar !", 1 , (255,255,255))
+
+    pantalla.blit(img, (0,0))
+    pantalla.blit(text5, (70,ALTO-10))
+
+    pygame.display.flip()
+    terminar = False
+    while not terminar:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminar=True
+                salir=True
+            elif event.type==pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    terminar=True
+                if event.key == pygame.K_RETURN:
+                    terminar=True
 
 def game():
     """ Programa principal """
@@ -665,10 +814,13 @@ def game():
     # Controlamos que tan rapido actualizamos pantalla
     reloj = pygame.time.Clock()
     pausa=False
+    flag_segundo=True
     # -------- Ciclo del juego -----------
     while not fin:
         if(jugador.vida <= 0):
-            print "game_over"
+            fin=True
+            pantalla_game_over()
+
         for enemigo in nivel_actual.enemigos_lista:
             if(enemigo.vida <= 0):
                 nivel_actual.enemigos_lista.remove(enemigo)
@@ -705,16 +857,43 @@ def game():
                     jugador.no_mover()
 
         #  Si el jugador se aproxima al limite derecho de la pantalla (-x)
-        if jugador.rect.x >= 500:
-            dif = jugador.rect.x - 500
-            jugador.rect.x = 500
-            nivel_actual.Mover_fondo(-dif)
+        if(nivel_actual_no==0):
+            if jugador.rect.x >= 500:
+                dif = jugador.rect.x - 500
+                jugador.rect.x = 500
+                nivel_actual.Mover_fondo(-dif,0)
 
-        # Si el jugador se aproxima al limite izquierdo de la pantalla (+x)
-        if jugador.rect.x <= 120:
-           dif = 120 - jugador.rect.x
-           jugador.rect.x = 120
-           nivel_actual.Mover_fondo(dif)
+            # Si el jugador se aproxima al limite izquierdo de la pantalla (+x)
+            if jugador.rect.x <= 120:
+               dif = 120 - jugador.rect.x
+               jugador.rect.x = 120
+               nivel_actual.Mover_fondo(dif,0)
+
+        if(nivel_actual_no==1 and not jugador.hongo):
+            if(flag_segundo):
+                jugador.rect.x,jugador.rect.y = 500, 400
+                flag_segundo=False
+
+            if jugador.rect.y <= 100:
+                dif = jugador.rect.y - 100
+                jugador.rect.y = 100
+                nivel_actual.Mover_fondo(0,-dif/2)
+            # Si el jugador se aproxima al limite izquierdo de la pantalla (+x)
+            if jugador.rect.y >= ALTO-100:
+                fin=True
+                pantalla_game_over()
+        else:
+            if jugador.rect.x >= 500:
+                dif = jugador.rect.x - 500
+                jugador.rect.x = 500
+                nivel_actual.Mover_fondo(-dif,0)
+
+            # Si el jugador se aproxima al limite izquierdo de la pantalla (+x)
+            if jugador.rect.x <= 120:
+               dif = 120 - jugador.rect.x
+               jugador.rect.x = 120
+               nivel_actual.Mover_fondo(dif,0)
+
 
         #Si llegamos al final del nivel
         pos_actual=jugador.rect.x + nivel_actual.mov_fondo
