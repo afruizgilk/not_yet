@@ -911,7 +911,7 @@ def game():
     nivel_lista.append( Nivel_02(jugador) )
 
     # Establecemos nivel actual
-    nivel_actual_no = 1
+    nivel_actual_no = 0
     nivel_actual = nivel_lista[nivel_actual_no]
 
     # Lista de sprites activos
