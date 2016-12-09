@@ -396,6 +396,7 @@ class Enemigo4(Enemigo):
             self.relative_pos-=speed
 
 class Boss(Enemigo):
+    nivel=None
     camino=[]
     ataque=[]
     def __init__(self,x,y,rango):
@@ -407,9 +408,24 @@ class Boss(Enemigo):
         self.ataque.append(pygame.image.load("data/images/enemy/predatormaskattack_1.png"))
         self.conta=True
         self.relative_pos = x
+        self.shot=0
 
     def update(self):
         speed = 4
+
+        if(self.shot == 0):
+            bl = Bullet_en(self.rect.x,self.rect.y, [jugador.rect.x,jugador.rect.y])
+            bl.nivel = self.nivel
+            bl.image = pygame.image.load("data/images/bala_j.png").convert_alpha()
+            bl.go((jugador.rect.x,jugador.rect.y))
+            self.nivel.elementos_lista.add(bl)
+            self.shot+=1
+        else:
+            if(self.shot >= 100):
+                self.shot = 0
+            else:
+                self.shot += 1
+
         if(self.i >= len(self.camino)-1):
             self.i=0
 
@@ -752,6 +768,7 @@ class Nivel_02(Nivel):
 
         for enemigo in boss:
             en=Boss(enemigo[0],enemigo[1],[enemigo[2],enemigo[3]])
+            en.nivel = self
             self.enemigos_lista.add(en)
 
         for element in elemento:
@@ -872,7 +889,6 @@ def final():
                     sys.exit(0)
 
 def game():
-    """ Programa principal """
     pygame.init()
 
     # Set the height and width of the screen
@@ -884,7 +900,7 @@ def game():
     #pantalla = pygame.display.set_mode(tam,pygame.FULLSCREEN)
 
 
-    pygame.display.set_caption("Ejemplo de juego de plataforma")
+    pygame.display.set_caption("Not Yet - Game")
     global jugador
     # Creamos jugador
     jugador = Jugador()
@@ -895,7 +911,7 @@ def game():
     nivel_lista.append( Nivel_02(jugador) )
 
     # Establecemos nivel actual
-    nivel_actual_no = 0
+    nivel_actual_no = 1
     nivel_actual = nivel_lista[nivel_actual_no]
 
     # Lista de sprites activos
