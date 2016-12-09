@@ -394,6 +394,9 @@ class Enemigo4(Enemigo):
             self.rect.x-=speed
             self.relative_pos-=speed
 
+"""class Boss(Enemigo):
+    camino=[]
+    ataque=[]"""
 
 class Jugador(pygame.sprite.Sprite):
     # Atributos
